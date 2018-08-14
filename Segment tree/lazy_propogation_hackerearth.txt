@@ -1,0 +1,136 @@
+import java.io.*;
+public class MyClass{
+    static int[] a = new int[1000001];
+    public static void main(String[] args) throws IOException{
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        int n = Integer.parseInt(br.readLine());
+        StringBuffer sb = new StringBuffer();
+        
+        //For N blocks
+        int l, h, p, c, x;
+        String[] s;
+        Node segTree = new Node();
+        segTree.lRange = 0;
+        segTree.rRange = 1000000;
+        buildTree(segTree);
+        Node lazyTree = new Node();
+        lazyTree.lRange = 0;
+        lazyTree.rRange = 1000000;
+        buildTree(lazyTree);
+        for(int i=0;i<n;i++){
+            s = br.readLine().split(" ");
+            l = Integer.parseInt(s[0]);
+            h = Integer.parseInt(s[1]);
+            p = Integer.parseInt(s[2]);
+            c = Integer.parseInt(s[3]);
+            x = Integer.parseInt(s[4]);
+            
+            int left = x;
+            int right = l + x - 1;
+            int position = p + x - 1;
+            
+            int h1 = query(segTree, lazyTree, left, right);
+            int h2 = query(segTree, lazyTree, position, position) + h;
+            if (c == 0)
+                h1 = Math.max(h1, h2);
+            update(segTree, lazyTree, left, right, h1 + 1);
+            h2 = query(segTree, lazyTree, position, position) + h;
+            if(c == 1)
+                update(segTree, lazyTree, position, position, h2);
+        }
+        
+        System.out.println(query(segTree, lazyTree, 0, 1000000));
+    }
+    private static void buildTree(Node root){
+        if(root.lRange == root.rRange){
+            //leaf Node
+            root.val = a[root.lRange];
+            return;
+        }
+        Node left = new Node();
+        left.lRange = root.lRange;
+        left.rRange = (root.lRange+root.rRange)/2;
+        root.left = left;
+        //System.out.println(left.lRange + " " + left.rRange);
+        buildTree(left);
+ 
+        Node right = new Node();
+        right.rRange = root.rRange;
+        right.lRange = (root.lRange+root.rRange)/2 + 1;
+        root.right = right;
+        buildTree(right);
+ 
+        root.val = Math.max(left.val, right.val);
+    }
+    private static int query(Node root, Node lazy, int qleft, int qright){
+        if(root == null){
+            return Integer.MIN_VALUE;
+        }
+        
+        //Update Lazy Tree
+        root.val = Math.max(root.val, lazy.val);
+        if(lazy.left != null){
+            lazy.left.val = Math.max(lazy.left.val, lazy.val);
+        }
+        if(lazy.right != null){
+            lazy.right.val = Math.max(lazy.right.val, lazy.val);;
+        }
+        lazy.val = 0;
+        
+        //No overlap
+        if(root.rRange < qleft || root.lRange > qright){
+            return Integer.MIN_VALUE;
+        }
+ 
+        //Total overlap
+        if(qleft <= root.lRange && root.rRange <= qright){
+            return root.val;
+        }
+ 
+        int left = query(root.left, lazy.left, qleft, qright);
+        int right = query(root.right, lazy.right, qleft, qright);
+        return Math.max(left, right);
+    }
+    private static void update(Node root, Node lazy, int qleft, int qright, int value){
+        if(root == null){
+            return;
+        }
+        //Check whether in Range
+        //No overlap
+        if(root.rRange < qleft || root.lRange > qright){
+            return;
+        }
+        
+        //Total overlap
+        if(qleft <= root.lRange && root.rRange <= qright){
+            root.val = value;
+            if(lazy.left != null){
+                lazy.left.val = value;
+            }
+            if(lazy.right != null){
+                lazy.right.val = value;
+            }
+            return;
+        }
+        
+        update(root.left, lazy.left, qleft, qright,value);
+        update(root.right, lazy.right, qleft, qright,value);
+        int lval = Integer.MIN_VALUE;
+        int rval = Integer.MIN_VALUE;
+        if(root.left != null){
+            lval = root.left.val;
+        }
+        if(root.right != null){
+            rval = root.right.val;
+        }
+        root.val = Math.max(lval, rval);
+        return;
+    }
+}
+class Node{
+    int lRange;
+    int rRange;
+    int val;
+    Node left;
+    Node right;
+}
