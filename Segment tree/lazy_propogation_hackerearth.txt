@@ -1,3 +1,5 @@
+segment tree with lazy propogation is used when we want to update a range in an array
+
 import java.io.*;
 public class MyClass{
     static int[] a = new int[1000001];
